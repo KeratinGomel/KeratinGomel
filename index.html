@@ -42,48 +42,54 @@
 <script>
 var data = {
   proc: [
-    { name: 'Кератин / ботокс', prices: [100, 125, 145, 185, 225] },
-    { name: 'Холодное восстановление + реконструкция', prices: [125, 135, 155, 165, 185] }
+    { name: 'Кератин / ботокс',
+      prices: [100, 125, 145, 185, 225],
+      dens: [0, 20, 35, 60] },
+    { name: 'Холодное восстановление + реконструкция',
+      prices: [125, 135, 155, 165, 185],
+      dens: [0, 20, 35, 60] },
+    { name: 'Холодное восстановление',
+      prices: [65, 75, 95, 115, 125],
+      dens: [0, 15, 20, 25] }
   ],
   len: ['30–35 см', '40–45 см', '50–55 см', '60–65 см', '70–75 см'],
-  dens: [
-    { name: 'до 6 см', add: 0 },
-    { name: '7–8 см', add: 20 },
-    { name: '9–10 см', add: 35 },
-    { name: 'от 11 см', add: 60 }
-  ]
+  densNames: ['до 6 см', '7–8 см', '9–10 см', 'от 11 см']
 };
 var WA_LINK = 'https://wa.me/375296068418';
 var TG_LINK = 'https://t.me/tatyanapatuk';
 var sel = { proc: 0, len: 1, dens: 0 };
 
 function render() {
+  var p = data.proc[sel.proc];
   ['proc','len','dens'].forEach(function(key) {
     var el = document.getElementById(key);
     el.innerHTML = '';
     data[key].forEach(function(opt, i) {
       var b = document.createElement('button');
       b.className = 'chip' + (sel[key] === i ? ' on' : '');
-      var label = (key === 'len') ? opt : opt.name;
+      var label = (key === 'proc') ? opt.name : (key === 'len') ? opt : data.densNames[i];
       var meta = '';
-      if (key === 'len') meta = '<span class="meta">от ' + data.proc[sel.proc].prices[i] + ' р.</span>';
-      if (key === 'dens') meta = '<span class="meta">' + (opt.add ? '+' + opt.add + ' р.' : 'без доплаты') + '</span>';
+      if (key === 'len') meta = '<span class="meta">от ' + p.prices[i] + ' р.</span>';
+      if (key === 'dens') {
+        var add = p.dens[i];
+        meta = '<span class="meta">' + (add ? '+' + add + ' р.' : 'без доплаты') + '</span>';
+      }
       b.innerHTML = label + meta;
       b.onclick = function() { sel[key] = i; render(); };
       el.appendChild(b);
     });
   });
-  var p = data.proc[sel.proc], d = data.dens[sel.dens];
+  var dAdd = p.dens[sel.dens];
   var base = p.prices[sel.len];
-  var total = base + d.add;
+  var total = base + dAdd;
   document.getElementById('rows').innerHTML =
     '<span>' + p.name + '</span><b>' + base + ' р.</b>' +
     '<span>Длина ' + data.len[sel.len] + '</span><b></b>' +
-    '<span>Густота ' + d.name + '</span><b>' + (d.add ? '+' + d.add + ' р.' : 'включено') + '</b>';
+    '<span>Густота ' + data.densNames[sel.dens] + '</span><b>' + (dAdd ? '+' + dAdd + ' р.' : 'включено') + '</b>';
   document.getElementById('price').textContent = total + ' р.';
   var text = encodeURIComponent(
     'Здравствуйте! Хочу записаться: ' + p.name + ', длина ' + data.len[sel.len] +
-    ', густота ' + d.name + '. По калькулятору вышло ' + total + ' р.');
+    ', густота ' + data.densNames[sel.dens] + '. По калькулятору вышло ' + total + ' р.');
   document.getElementById('waLink').href = WA_LINK + '?text=' + text;
   document.getElementById('tgLink').href = TG_LINK + '?text=' + text;
 }
