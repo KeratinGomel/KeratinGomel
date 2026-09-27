@@ -1,97 +1,891 @@
-<style>
-  .calc { font-family: -apple-system, Roboto, sans-serif; color: #1a1a1a; max-width: 560px; margin: 0 auto; }
-  .calc h2 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
-  .calc .sub { color: #777; font-size: 14px; margin: 0 0 20px; }
-  .step { margin-bottom: 20px; }
-  .step-label { font-size: 14px; font-weight: 600; color: #444; margin-bottom: 8px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; background: #fff; color: #1a1a1a; font-size: 15px; cursor: pointer; }
-  .chip.on { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .chip .meta { display: block; font-size: 12px; color: #999; margin-top: 2px; }
-  .chip.on .meta { color: #bbb; }
-  .total { border: 1px solid #ddd; border-radius: 12px; padding: 16px 20px; margin-top: 8px; background: #fafafa; }
-  .total .rows { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; color: #555; margin-bottom: 12px; }
-  .total .rows b { font-weight: 600; color: #1a1a1a; text-align: right; }
-  .price-row { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 12px; }
-  .price-label { font-size: 14px; color: #555; }
-  .price { font-size: 36px; font-weight: 600; }
-  .note { font-size: 13px; color: #777; margin-top: 8px; }
-  .extra { font-size: 13px; margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: #fff7e0; color: #1a1a1a; }
-  .cta-row { display: flex; gap: 12px; margin-top: 16px; }
-  .cta { flex: 1; padding: 14px; border: none; border-radius: 10px; background: #1a1a1a; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
-  .cta.wa { background: #1faa53; }
-  .cta.tg { background: #229ed9; }
-</style>
-<div class="calc">
-  <h2>Калькулятор стоимости</h2>
-  <p class="sub">Выберите процедуру, длину и густоту — цена пересчитается сразу</p>
-  <div class="step"><div class="step-label">1. Процедура</div><div class="chips" id="proc"></div></div>
-  <div class="step"><div class="step-label">2. Длина волос</div><div class="chips" id="len"></div></div>
-  <div class="step"><div class="step-label">3. Густота (обхват хвоста)</div><div class="chips" id="dens"></div></div>
-  <div class="total">
-    <div class="rows" id="rows"></div>
-    <div class="price-row"><span class="price-label">Итого</span><span class="price" id="price"></span></div>
-    <div class="extra">Если потребуется подложка — доплата +30 р.</div>
-    <div class="note">Цена ориентировочная и может измениться после осмотра волос мастером.</div>
-  </div>
-  <div class="cta-row">
-    <a href="#" id="waLink" class="cta wa" style="text-decoration:none">Записаться в WhatsApp</a>
-    <a href="#" id="tgLink" class="cta tg" style="text-decoration:none">Записаться в Telegram</a>
-  </div>
-</div>
-<script>
-var data = {
-  proc: [
-    { name: 'Кератин / ботокс',
-      prices: [100, 125, 145, 185, 225],
-      dens: [0, 20, 35, 60] },
-    { name: 'Холодное восстановление + реконструкция',
-      prices: [125, 135, 155, 165, 185],
-      dens: [0, 20, 35, 60] },
-    { name: 'Холодное восстановление',
-      prices: [65, 75, 95, 115, 125],
-      dens: [0, 15, 20, 25] }
-  ],
-  len: ['30–35 см', '40–45 см', '50–55 см', '60–65 см', '70–75 см'],
-  densNames: ['до 6 см', '7–8 см', '9–10 см', 'от 11 см']
-};
-var WA_LINK = 'https://wa.me/375296068418';
-var TG_LINK = 'https://t.me/tatyanapatuk';
-var sel = { proc: 0, len: 1, dens: 0 };
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
 
-function render() {
-  var p = data.proc[sel.proc];
-  ['proc','len','dens'].forEach(function(key) {
-    var el = document.getElementById(key);
-    el.innerHTML = '';
-    data[key].forEach(function(opt, i) {
-      var b = document.createElement('button');
-      b.className = 'chip' + (sel[key] === i ? ' on' : '');
-      var label = (key === 'proc') ? opt.name : (key === 'len') ? opt : data.densNames[i];
-      var meta = '';
-      if (key === 'len') meta = '<span class="meta">от ' + p.prices[i] + ' р.</span>';
-      if (key === 'dens') {
-        var add = p.dens[i];
-        meta = '<span class="meta">' + (add ? '+' + add + ' р.' : 'без доплаты') + '</span>';
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Калькулятор стоимости волос</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 30px 15px;
+      background: #ffffff;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+      color: #1a1a1a;
+    }
+
+    .calc {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Заголовок */
+
+    .calc h2 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 5px;
+    }
+
+    .calc .sub {
+      color: #777;
+      font-size: 16px;
+      margin: 0 0 25px;
+      line-height: 1.4;
+    }
+
+    /* Шаги */
+
+    .step {
+      margin-bottom: 25px;
+    }
+
+    .step-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 10px;
+    }
+
+    /* Кнопки */
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .chip {
+      padding: 10px 16px;
+      border-radius: 7px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #1a1a1a;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .chip:hover {
+      border-color: #999;
+    }
+
+    .chip:active {
+      transform: scale(0.98);
+    }
+
+    .chip.on {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
+    }
+
+    .chip .meta {
+      display: block;
+      font-size: 13px;
+      color: #999;
+      margin-top: 3px;
+    }
+
+    .chip.on .meta {
+      color: #bbb;
+    }
+
+    /* Итог */
+
+    .total {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-top: 10px;
+      background: #fafafa;
+    }
+
+    .total .rows {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 7px 15px;
+      font-size: 15px;
+      color: #555;
+      margin-bottom: 14px;
+    }
+
+    .total .rows b {
+      font-weight: 600;
+      color: #1a1a1a;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-top: 1px solid #ddd;
+      padding-top: 14px;
+    }
+
+    .price-label {
+      font-size: 15px;
+      color: #555;
+    }
+
+    .price {
+      font-size: 36px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    /* Дополнительная информация */
+
+    .extra {
+      font-size: 14px;
+      margin-top: 10px;
+      padding: 10px 13px;
+      border-radius: 7px;
+      background: #fff7e0;
+      color: #1a1a1a;
+    }
+
+    .note {
+      font-size: 13px;
+      color: #777;
+      margin-top: 9px;
+      line-height: 1.4;
+    }
+
+    /* Кнопки записи */
+
+    .cta-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .cta {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .cta:hover {
+      opacity: 0.9;
+    }
+
+    .cta.wa {
+      background: #1faa53;
+    }
+
+    .cta.tg {
+      background: #229ed9;
+    }
+
+    /* Телефон */
+
+    @media (max-width: 600px) {
+
+      body {
+        padding: 20px 12px;
       }
-      b.innerHTML = label + meta;
-      b.onclick = function() { sel[key] = i; render(); };
-      el.appendChild(b);
-    });
-  });
-  var dAdd = p.dens[sel.dens];
-  var base = p.prices[sel.len];
-  var total = base + dAdd;
-  document.getElementById('rows').innerHTML =
-    '<span>' + p.name + '</span><b>' + base + ' р.</b>' +
-    '<span>Длина ' + data.len[sel.len] + '</span><b></b>' +
-    '<span>Густота ' + data.densNames[sel.dens] + '</span><b>' + (dAdd ? '+' + dAdd + ' р.' : 'включено') + '</b>';
-  document.getElementById('price').textContent = total + ' р.';
-  var text = encodeURIComponent(
-    'Здравствуйте! Хочу записаться: ' + p.name + ', длина ' + data.len[sel.len] +
-    ', густота ' + data.densNames[sel.dens] + '. По калькулятору вышло ' + total + ' р.');
-  document.getElementById('waLink').href = WA_LINK + '?text=' + text;
-  document.getElementById('tgLink').href = TG_LINK + '?text=' + text;
-}
-render();
-</script>
+
+      .calc h2 {
+        font-size: 21px;
+      }
+
+      .calc .sub {
+        font-size: 14px;
+      }
+
+      .step-label {
+        font-size: 15px;
+      }
+
+      .chip {
+        font-size: 14px;
+        padding: 9px 12px;
+      }
+
+      .total {
+        padding: 16px;
+      }
+
+      .price {
+        font-size: 30px;
+      }
+
+      .cta-row {
+        flex-direction: column;
+      }
+
+      .cta {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="calc">
+
+    <h2>Калькулятор стоимости</h2>
+
+    <p class="sub">
+      Выберите процедуру, длину и густоту — цена пересчитается сразу
+    </p>
+
+
+    <!-- ==========================================
+         1. ПРОЦЕДУРА
+         ========================================== -->
+
+    <div class="step">
+
+      <div class="step-label">
+        1. Процедура
+      </div>
+
+      <div
+        class="chips"
+        id="proc"
+      ></div>
+
+    </div>
+
+
+    <!-- ==========================================
+         2. ДЛИНА
+         ========================================== -->
+
+    <div class="step">
+
+      <div class="step-label">
+        2. Длина волос
+      </div>
+
+      <div
+        class="chips"
+        id="len"
+      ></div>
+
+    </div>
+
+
+    <!-- ==========================================
+         3. ГУСТОТА
+         ========================================== -->
+
+    <div class="step">
+
+      <div class="step-label">
+        3. Густота (обхват хвоста)
+      </div>
+
+      <div
+        class="chips"
+        id="dens"
+      ></div>
+
+    </div>
+
+
+    <!-- ==========================================
+         ИТОГ
+         ========================================== -->
+
+    <div class="total">
+
+      <div
+        class="rows"
+        id="rows"
+      ></div>
+
+      <div class="price-row">
+
+        <span class="price-label">
+          Итого
+        </span>
+
+        <span
+          class="price"
+          id="price"
+        ></span>
+
+      </div>
+
+      <div class="extra">
+        Если потребуется подложка — доплата +30 р.
+      </div>
+
+      <div class="note">
+        Цена ориентировочная и может измениться после
+        осмотра волос мастером.
+      </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         ЗАПИСЬ
+         ========================================== -->
+
+    <div class="cta-row">
+
+      <a
+        href="#"
+        id="waLink"
+        class="cta wa"
+      >
+        Записаться в WhatsApp
+      </a>
+
+      <a
+        href="#"
+        id="tgLink"
+        class="cta tg"
+      >
+        Записаться в Telegram
+      </a>
+
+    </div>
+
+  </div>
+
+
+  <script>
+
+    /* ==================================================
+       ДАННЫЕ КАЛЬКУЛЯТОРА
+       ================================================== */
+
+    var data = {
+
+      /* -----------------------------------------------
+         ПРОЦЕДУРЫ
+         ----------------------------------------------- */
+
+      proc: [
+
+        {
+          name: 'Кератин / ботокс',
+
+          /*
+           * Цены в зависимости от длины:
+           * 30–35
+           * 40–45
+           * 50–55
+           * 60–65
+           * 70–75
+           */
+
+          prices: [
+            100,
+            125,
+            145,
+            185,
+            225
+          ],
+
+          /*
+           * Доплата за густоту:
+           * до 6 см
+           * 7–8 см
+           * 9–10 см
+           * от 11 см
+           */
+
+          dens: [
+            0,
+            20,
+            35,
+            60
+          ]
+        },
+
+
+        {
+          name:
+            'Холодное восстановление + реконструкция',
+
+          prices: [
+            125,
+            135,
+            155,
+            165,
+            185
+          ],
+
+          dens: [
+            0,
+            20,
+            35,
+            60
+          ]
+        },
+
+
+        {
+          name:
+            'Холодное восстановление',
+
+          prices: [
+            65,
+            75,
+            95,
+            115,
+            125
+          ],
+
+          dens: [
+            0,
+            15,
+            20,
+            25
+          ]
+        }
+
+      ],
+
+
+      /* -----------------------------------------------
+         ДЛИНА ВОЛОС
+         ----------------------------------------------- */
+
+      len: [
+
+        '30–35 см',
+
+        '40–45 см',
+
+        '50–55 см',
+
+        '60–65 см',
+
+        '70–75 см'
+
+      ],
+
+
+      /* -----------------------------------------------
+         ГУСТОТА
+         ----------------------------------------------- */
+
+      densNames: [
+
+        'до 6 см',
+
+        '7–8 см',
+
+        '9–10 см',
+
+        'от 11 см'
+
+      ]
+
+    };
+
+
+    /* ==================================================
+       ССЫЛКИ
+       ================================================== */
+
+    var WA_LINK =
+      'https://wa.me/375296068418';
+
+    var TG_LINK =
+      'https://t.me/tatyanapatuk';
+
+
+    /* ==================================================
+       ТЕКУЩИЙ ВЫБОР
+       ================================================== */
+
+    var sel = {
+
+      /*
+       * 0 = Кератин / ботокс
+       * 1 = Холодное восстановление + реконструкция
+       * 2 = Холодное восстановление
+       */
+
+      proc: 0,
+
+      /*
+       * По умолчанию выбрана длина 40–45 см
+       */
+
+      len: 1,
+
+      /*
+       * По умолчанию выбрана густота до 6 см
+       */
+
+      dens: 0
+
+    };
+
+
+    /* ==================================================
+       ОСНОВНАЯ ФУНКЦИЯ ОТРИСОВКИ
+       ================================================== */
+
+    function render() {
+
+      /*
+       * Получаем выбранную процедуру
+       */
+
+      var p =
+        data.proc[sel.proc];
+
+
+      /* ==================================================
+         ПРОЦЕДУРЫ
+         ================================================== */
+
+      var procEl =
+        document.getElementById('proc');
+
+      procEl.innerHTML = '';
+
+
+      data.proc.forEach(
+        function(opt, i) {
+
+          var b =
+            document.createElement('button');
+
+          b.type = 'button';
+
+          b.className =
+            'chip' +
+            (
+              sel.proc === i
+                ? ' on'
+                : ''
+            );
+
+
+          b.textContent =
+            opt.name;
+
+
+          /*
+           * При выборе процедуры
+           */
+
+          b.onclick =
+            function() {
+
+              sel.proc = i;
+
+              /*
+               * Возвращаем густоту
+               * к первому варианту
+               */
+
+              sel.dens = 0;
+
+              render();
+
+            };
+
+
+          procEl.appendChild(b);
+
+        }
+      );
+
+
+      /* ==================================================
+         ДЛИНА
+         ================================================== */
+
+      var lenEl =
+        document.getElementById('len');
+
+      lenEl.innerHTML = '';
+
+
+      data.len.forEach(
+        function(opt, i) {
+
+          var b =
+            document.createElement('button');
+
+          b.type = 'button';
+
+          b.className =
+            'chip' +
+            (
+              sel.len === i
+                ? ' on'
+                : ''
+            );
+
+
+          b.innerHTML =
+            opt +
+            '<span class="meta">' +
+            'от ' +
+            p.prices[i] +
+            ' р.' +
+            '</span>';
+
+
+          /*
+           * При выборе длины
+           */
+
+          b.onclick =
+            function() {
+
+              sel.len = i;
+
+              render();
+
+            };
+
+
+          lenEl.appendChild(b);
+
+        }
+      );
+
+
+      /* ==================================================
+         ГУСТОТА
+         ================================================== */
+
+      var densEl =
+        document.getElementById('dens');
+
+      densEl.innerHTML = '';
+
+
+      /*
+       * ВАЖНО:
+       * здесь используется densNames,
+       * а не data.dens.
+       *
+       * Именно эта ошибка была причиной,
+       * почему кнопки густоты не отображались.
+       */
+
+      data.densNames.forEach(
+        function(opt, i) {
+
+          var b =
+            document.createElement('button');
+
+          b.type = 'button';
+
+          b.className =
+            'chip' +
+            (
+              sel.dens === i
+                ? ' on'
+                : ''
+            );
+
+
+          /*
+           * Доплата за выбранную густоту
+           */
+
+          var add =
+            p.dens[i];
+
+
+          var metaText;
+
+
+          if (add > 0) {
+
+            metaText =
+              '+' +
+              add +
+              ' р.';
+
+          } else {
+
+            metaText =
+              'без доплаты';
+
+          }
+
+
+          b.innerHTML =
+            opt +
+            '<span class="meta">' +
+            metaText +
+            '</span>';
+
+
+          /*
+           * При выборе густоты
+           */
+
+          b.onclick =
+            function() {
+
+              sel.dens = i;
+
+              render();
+
+            };
+
+
+          densEl.appendChild(b);
+
+        }
+      );
+
+
+      /* ==================================================
+         РАСЧЁТ ЦЕНЫ
+         ================================================== */
+
+      var dAdd =
+        p.dens[sel.dens];
+
+
+      var base =
+        p.prices[sel.len];
+
+
+      var total =
+        base + dAdd;
+
+
+      /* ==================================================
+         БЛОК "ИТОГО"
+         ================================================== */
+
+      document.getElementById('rows').innerHTML =
+
+        '<span>' +
+          p.name +
+        '</span>' +
+
+        '<b>' +
+          base +
+          ' р.' +
+        '</b>' +
+
+        '<span>' +
+          'Длина ' +
+          data.len[sel.len] +
+        '</span>' +
+
+        '<b></b>' +
+
+        '<span>' +
+          'Густота ' +
+          data.densNames[sel.dens] +
+        '</span>' +
+
+        '<b>' +
+
+          (
+            dAdd
+              ? '+' + dAdd + ' р.'
+              : 'включено'
+          ) +
+
+        '</b>';
+
+
+      /* ==================================================
+         ИТОГОВАЯ ЦЕНА
+         ================================================== */
+
+      document.getElementById('price')
+        .textContent =
+          total + ' р.';
+
+
+      /* ==================================================
+         WHATSAPP
+         ================================================== */
+
+      var message =
+
+        'Здравствуйте! Хочу записаться: ' +
+
+        p.name +
+
+        ', длина ' +
+
+        data.len[sel.len] +
+
+        ', густота ' +
+
+        data.densNames[sel.dens] +
+
+        '. По калькулятору вышло ' +
+
+        total +
+
+        ' р.';
+
+
+      var encodedMessage =
+        encodeURIComponent(message);
+
+
+      document.getElementById('waLink').href =
+
+        WA_LINK +
+        '?text=' +
+        encodedMessage;
+
+
+      /* ==================================================
+         TELEGRAM
+         ================================================== */
+
+      document.getElementById('tgLink').href =
+
+        TG_LINK +
+        '?text=' +
+        encodedMessage;
+
+    }
+
+
+    /* ==================================================
+       ЗАПУСК КАЛЬКУЛЯТОРА
+       ================================================== */
+
+    render();
+
+  </script>
+
+</body>
+</html>
